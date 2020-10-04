@@ -45,6 +45,7 @@ body {
     visibility: visible;
     z-index: 2;
     background: linear-gradient(354deg, #4568DC 0%, #b06ab3 100%);
+    user-select: none;
 }
 .bt-logo {
     margin-bottom: 15px;
