@@ -13,6 +13,13 @@ let snackbarTimeout = null;
 let sendStatus = false;
 let powerStatus = false;
 
+const send = (section, command) => {
+    if(!gatt || !charstc) {
+        return showSnackbar('Nie połączono z urządzeniem');
+    }
+    charstc.writeValue(Uint8Array.of(section | (command << 4)));
+}
+
 $(() => {
     if (location.protocol !== 'https:') {
         location.replace(`https:${location.href.substring(location.protocol.length)}`);
@@ -65,10 +72,11 @@ $(() => {
     });
 
     $('#light-switch').on('click touch', function() {
-        if(!gatt || !charstc) {
-            return showSnackbar('Nie połączono z urządzeniem');
-        }
-        charstc.writeValue(Uint8Array.of(parseInt($('#section').val()) | 0b00010000));
+        send(parseInt($('#section').val()), 1);
+    });
+
+    $('#halloween-mode').on('click touch', function() {
+        send(parseInt($('#section').val()), 3);
     });
 });
 function showSnackbar(msg) {
