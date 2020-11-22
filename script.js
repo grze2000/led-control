@@ -24,9 +24,10 @@ $(() => {
     if (location.protocol !== 'https:') {
         location.replace(`https:${location.href.substring(location.protocol.length)}`);
     }
+    $('.actual-color').css('background-color', 'rgb(255, 78, 0)');
     colorWheel = new ReinventedColorWheel({
         appendTo: document.querySelector('.color-picker'),
-        rgb: [255, 0, 0],
+        rgb: [255, 78, 0],
         wheelThickness: 30,
         onChange: color => {
             if(charstc && !sendStatus) {
