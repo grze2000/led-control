@@ -22,6 +22,8 @@ It uses the [SoftwareSerial](https://www.arduino.cc/en/Reference/softwareSerial)
 
  It uses [Bluetooth Web API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API) to communicate with controller
  
+ ![](http://grzegorzbabiarz.com/img/ledControl.jpg)
+ 
  ## Features
  - Turn on/off, change color of selected part of led strip
  - Halloween mode
