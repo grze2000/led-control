@@ -79,6 +79,11 @@ $(() => {
     $('#halloween-mode').on('click touch', function() {
         send(parseInt($('#section').val()), 3);
     });
+
+    $('#thanos-snap').on('click touch', function() {
+        console.log('I am inevitable');
+        send(parseInt($('#section').val()), 4);
+    });
 });
 function showSnackbar(msg) {
     $('.snackbar').text(msg).addClass('snackbar-show');

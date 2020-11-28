@@ -55,6 +55,12 @@ int halloweenColors[4][3] = {
 };
 
 // ---------------------------------------
+// |      VARIABLES - THANOS MODE        |
+// ---------------------------------------
+
+int disintegrationStatus[2] = {0, 0}; // {pixelsToDisintegration, pixelCount}
+
+// ---------------------------------------
 // |         SHARED FUNCTIONS            |
 // ---------------------------------------
 
@@ -68,6 +74,10 @@ int randLedFromSection(int section) {
   }
 }
 
+bool isActive(int i) {
+  return strap.getPixelColor(i) != strap.Color(0, 0, 0);
+}
+
 // ---------------------------------------
 // |          HALLOWEEN MODE             |
 // ---------------------------------------
@@ -75,6 +85,59 @@ int randLedFromSection(int section) {
 void setHalloweenColor(int led) {
   int color = random(0, 4);
   strap.setPixelColor(led, halloweenColors[color][0], halloweenColors[color][1], halloweenColors[color][2]);
+}
+
+// ---------------------------------------
+// |            THANOS MODE              |
+// ---------------------------------------
+
+void thanosMode(int cmd, int section) {
+  if(sections[section][2] == 0) {
+    return;
+  }
+  animation[0] = section;
+  animation[1] = 2;
+  disintegrationStatus[1] = 0;
+  if(sections[section][0] > sections[section][1]) {
+    for(int i=sections[section][0]; i<LED_COUNT; i++) {
+      if(isActive(i)) disintegrationStatus[1]++;
+    }
+    for(int i=0; i<=sections[section][1]; i++) {
+      if(isActive(i)) disintegrationStatus[1]++;
+    }
+  } else {
+    for(int i=sections[section][0]; i<=sections[section][1]; i++) {
+      if(isActive(i)) disintegrationStatus[1]++;
+    }
+  }
+  if(disintegrationStatus[1] == 1) {
+    //to change: clear section with fill method
+    disintegrationStatus[0] = 1;
+    return;
+  }
+  disintegrationStatus[0] = disintegrationStatus[1] / 2;
+}
+
+void thanosModeLoop() {
+  if(animation[1] == 2 && animation[0] != -1) {
+    if(disintegrationStatus[0] == 0) {
+      // End of animation, cleanup
+      animation[0] = -1;
+      animation[1] = 0;
+      disintegrationStatus[1] = 0;
+      return;
+    }
+    if(millis() - animationTimer > 3000 / (disintegrationStatus[1] / 2)) {
+      int led = randLedFromSection(animation[0]);
+      while(!isActive(led)) {
+        led = randLedFromSection(animation[0]);
+      }
+      strap.setPixelColor(led, 0, 0, 0);
+      strap.show();
+      disintegrationStatus[0]--;
+      animationTimer = millis();
+    }
+  }
 }
 
 // ---------------------------------------
@@ -177,6 +240,9 @@ void loop() {
         }
       }
       strap.show();
+    } else if(cmd == 4) {
+      // Thanos mode
+      thanosMode(cmd, section);
     }
     //Serial.write(data);
   }
@@ -210,4 +276,6 @@ void loop() {
       animationTimer = millis();
     }
   }
+
+  thanosModeLoop();
 }
