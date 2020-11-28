@@ -4,10 +4,19 @@
 #define LED_COUNT 403
 #define DEBUG false
 
+// ---------------------------------------
+// |          CLASS INSTANCES            |
+// ---------------------------------------
+
 SoftwareSerial bluetooth(4, 3);
 Adafruit_NeoPixel strap = Adafruit_NeoPixel(LED_COUNT, A0, NEO_GRB + NEO_KHZ800);
+
+// ---------------------------------------
+// |             VARIABLES               |
+// ---------------------------------------
+
 int defaultColor[3] = {255, 78, 0};
-int sections[16][6] = {
+int sections[16][6] = { // {firstPixel, lastPixel, status, R, G, B}
   {0, 402, 0, 0, 0, 0},
   {0, 42, 0, 0, 0, 0},
   {43, 83, 0, 0, 0, 0},
@@ -26,22 +35,28 @@ int sections[16][6] = {
   {281, 124, 0, 0, 0, 0}
 };
 
-int halloweenColors[4][3] = {
-    {255, 30, 0},
-    {255, 50, 0},
-    {20, 4, 0},
-    {0, 0, 0}
-    
-};
+// ---------------------------------------
+// |       VARIABLES - ANIMATIONS        |
+// ---------------------------------------
 
-int animation[2] = {-1, 0};
+int animation[2] = {-1, 0}; // {section, animationNr}
 unsigned long animationTimer = 0;
 QList<int> q;
 
-void setHalloweenColor(int led) {
-  int color = random(0, 4);
-  strap.setPixelColor(led, halloweenColors[color][0], halloweenColors[color][1], halloweenColors[color][2]);
-}
+// ---------------------------------------
+// |     VARIABLES - HALLOWEEN MODE      |
+// ---------------------------------------
+
+int halloweenColors[4][3] = {
+  {255, 30, 0},
+  {255, 50, 0},
+  {20, 4, 0},
+  {0, 0, 0}
+};
+
+// ---------------------------------------
+// |         SHARED FUNCTIONS            |
+// ---------------------------------------
 
 int randLedFromSection(int section) {
   if(sections[section][0] > sections[section][1]) {
@@ -53,8 +68,21 @@ int randLedFromSection(int section) {
   }
 }
 
+// ---------------------------------------
+// |          HALLOWEEN MODE             |
+// ---------------------------------------
+
+void setHalloweenColor(int led) {
+  int color = random(0, 4);
+  strap.setPixelColor(led, halloweenColors[color][0], halloweenColors[color][1], halloweenColors[color][2]);
+}
+
+// ---------------------------------------
+// |        SETUP AND MAIN LOOP          |
+// ---------------------------------------
+
 void setup() {
-  randomSeed(analogRead(A0));
+  randomSeed(analogRead(A1));
   bluetooth.begin(9600);
   if(DEBUG) {
     Serial.begin(9600);
