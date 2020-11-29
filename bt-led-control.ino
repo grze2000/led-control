@@ -91,7 +91,7 @@ void setHalloweenColor(int led) {
 // |            THANOS MODE              |
 // ---------------------------------------
 
-void thanosMode(int cmd, int section) {
+void thanosMode(int section) {
   if(sections[section][2] == 0) {
     return;
   }
@@ -135,6 +135,60 @@ void thanosModeLoop() {
       strap.setPixelColor(led, 0, 0, 0);
       strap.show();
       disintegrationStatus[0]--;
+      animationTimer = millis();
+    }
+  }
+}
+
+// ---------------------------------------
+// |           HALLOWEEN MODE            |
+// ---------------------------------------
+
+void halloweenMode(int section) {
+  animation[0] = section;
+  animation[1] = 1;
+  if(sections[section][2] == 0) {
+    sections[section][2] = 1;
+  }
+  if(sections[section][0] > sections[section][1]) {
+    for(int i=sections[section][0]; i<LED_COUNT; i++) {
+      setHalloweenColor(i);
+    }
+    for(int i=0; i<=sections[section][1]; i++) {
+      setHalloweenColor(i);
+    }
+  } else {
+    for(int i=sections[section][0]; i<=sections[section][1]; i++) {
+      setHalloweenColor(i);
+    }
+  }
+  strap.show();
+}
+
+void halloweenModeLoop() {
+  if(animation[1] == 1 && animation[0] != -1) {
+    if(millis() - animationTimer > 150) {
+      if(q.size() == 0) {
+        for(int i=0; i<4; i++) {
+          int led = randLedFromSection(animation[0]);
+          q.push_front(led);
+        }
+      } else {
+        int led = randLedFromSection(animation[0]);
+        q.pop_back();
+        q.push_front(led);
+      }
+      for(int i=0; i<4; i++) {
+        int led = q.get(i);
+        uint32_t ledColor = strap.getPixelColor(led);
+        if(ledColor == strap.Color(0, 0, 0)) {
+          int color = random(0, 3);
+          strap.setPixelColor(led, halloweenColors[color][0], halloweenColors[color][1], halloweenColors[color][2]);
+        } else {
+          strap.setPixelColor(led, 0, 0, 0);
+        }
+      }
+      strap.show();
       animationTimer = millis();
     }
   }
@@ -221,28 +275,9 @@ void loop() {
         sections[section][i+3] = color[i];
       }
     } else if(cmd == 3 && (section == 0 || section > 9)) {
-      // Halloween mode
-      animation[0] = section;
-      animation[1] = 1;
-      if(sections[section][2] == 0) {
-        sections[section][2] = 1;
-      }
-      if(sections[section][0] > sections[section][1]) {
-        for(int i=sections[section][0]; i<LED_COUNT; i++) {
-          setHalloweenColor(i);
-        }
-        for(int i=0; i<=sections[section][1]; i++) {
-          setHalloweenColor(i);
-        }
-      } else {
-        for(int i=sections[section][0]; i<=sections[section][1]; i++) {
-          setHalloweenColor(i);
-        }
-      }
-      strap.show();
+      halloweenMode(section);
     } else if(cmd == 4) {
-      // Thanos mode
-      thanosMode(cmd, section);
+      thanosMode(section);
     }
     //Serial.write(data);
   }
@@ -250,32 +285,6 @@ void loop() {
     bluetooth.write(Serial.read());
   }
 
-  if(animation[1] == 1 && animation[0] != -1) {
-    if(millis() - animationTimer > 150) {
-      if(q.size() == 0) {
-        for(int i=0; i<4; i++) {
-          int led = randLedFromSection(animation[0]);
-          q.push_front(led);
-        }
-      } else {
-        int led = randLedFromSection(animation[0]);
-        q.pop_back();
-        q.push_front(led);
-      }
-      for(int i=0; i<4; i++) {
-        int led = q.get(i);
-        uint32_t ledColor = strap.getPixelColor(led);
-        if(ledColor == strap.Color(0, 0, 0)) {
-          int color = random(0, 3);
-          strap.setPixelColor(led, halloweenColors[color][0], halloweenColors[color][1], halloweenColors[color][2]);
-        } else {
-          strap.setPixelColor(led, 0, 0, 0);
-        }
-      }
-      strap.show();
-      animationTimer = millis();
-    }
-  }
-
+  halloweenModeLoop();
   thanosModeLoop();
 }
