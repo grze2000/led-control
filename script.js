@@ -12,6 +12,49 @@ let charstc = null;
 let snackbarTimeout = null;
 let sendStatus = false;
 let powerStatus = false;
+var socket = io.connect(window.config.hotwordDetectionServer);
+let recordAudio;
+let recording = false;
+
+function startRecording() {
+    navigator.getUserMedia({ audio: true, video: false}, mediaStream => {
+        recordAudio = RecordRTC(mediaStream, {
+            type: 'audio',
+            mimeType: 'audio/webm',
+            sampleRate: 44100,
+            desiredSampRate: 16000,
+            recorderType: StereoAudioRecorder,
+            numberOfAudioChannels: 1,
+            timeSlice: 1000,
+            ondataavailable: blob => {
+                let stream = ss.createStream();
+                ss(socket).emit('stream', stream, {size: blob.size});
+                ss.createBlobReadStream(blob).pipe(stream);
+            }
+        });
+        recordAudio.startRecording();
+    }, err => {
+        console.log(err);
+    });
+}
+
+function stopRecording() {
+    recordAudio.stopRecording(() => {
+        recordAudio.getDataURL(audioDataURL => {
+            socket.emit('stream', {
+                type: recordAudio.getBlob().type || 'audio/wav',
+                data: audioDataURL
+            });
+        });
+    });
+}
+
+socket.on('hotword', hotword => {
+    console.log('Hotword detected:' + hotword);
+    if(hotword == 'snap') {
+        send(parseInt($('#section').val()), 4);
+    }
+});
 
 const send = (section, command) => {
     if(!gatt || !charstc) {
@@ -83,6 +126,17 @@ $(() => {
     $('#thanos-snap').on('click touch', function() {
         console.log('I am inevitable');
         send(parseInt($('#section').val()), 4);
+    });
+
+    $('#hotword-recognition').on('click touch', function() {
+        if(recording) {
+            stopRecording();
+            $(this).find("img").attr("src", "img/microphone.svg");
+        } else {
+            startRecording();
+            $(this).find("img").attr("src", "img/microphone-on.svg");
+        }
+        recording = !recording;
     });
 });
 function showSnackbar(msg) {
