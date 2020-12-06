@@ -36,7 +36,7 @@
           </li>
           <li @click="halloweenMode()"><img src="@/assets/images/pumpkin.svg" alt="H" height="24"></li>
           <li @click="thanosSnap()"><img src="@/assets/images/infinity-guantlet.svg" alt="I" height="24"></li>
-          <li id="hotword-recognition"><img src="@/assets/images/microphone.svg" alt="I" height="24"></li>
+          <li @click="hotwordDetection()"><img :src="getImgUrl(this.recording ? 'images/microphone-on.svg' : 'images/microphone.svg')" alt="I" height="24"></li>
           <li @click="powerBtn()"><i class="fa fa-power-off"></i></li>
           <li @click="disconnect()"><i class="fa fa-sign-out"></i></li>
         </ul>
@@ -49,6 +49,9 @@
 <script>
 import "reinvented-color-wheel/css/reinvented-color-wheel.min.css";
 import ReinventedColorWheel from "reinvented-color-wheel";
+import io from 'socket.io-client';
+import ss from 'socket.io-stream';
+import RecordRTC from 'recordrtc';
 
 export default {
   name: 'App',
@@ -70,8 +73,7 @@ export default {
         message: ''
       },
       sendStatus: false,
-      powerStatus: false,
-      //socket: io.connect(window.config.hotwordDetectionServer),
+      socket: io(window.config.hotwordDetectionServer),
       recordAudio: null,
       recording: false,
       section: null,
@@ -93,6 +95,14 @@ export default {
     });
     this.colorWheel.wheelDiameter = window.innerWidth < window.innerHeight ? window.innerWidth*0.9 : window.innerHeight*0.7;
     this.colorWheel.redraw();
+  },
+  created() {
+    this.socket.on('hotword', hotword => {
+      console.log('Hotword detected:' + hotword);
+      if(hotword == 'snap') {
+          this.send(parseInt(this.section), 4);
+      }
+    });
   },
   methods: {
     connect() {
@@ -147,6 +157,44 @@ export default {
     thanosSnap() {
       console.log('I am inevitable');
       this.send(parseInt(this.section), 4);
+    },
+    startRecording() {
+      navigator.getUserMedia({ audio: true, video: false}, mediaStream => {
+        this.recordAudio = RecordRTC(mediaStream, {
+          type: 'audio',
+          mimeType: 'audio/webm',
+          sampleRate: 44100,
+          desiredSampRate: 16000,
+          recorderType: RecordRTC.StereoAudioRecorder,
+          numberOfAudioChannels: 1,
+          timeSlice: 1000,
+          ondataavailable: blob => {
+            let stream = ss.createStream();
+            ss(this.socket).emit('stream', stream, {size: blob.size});
+            ss.createBlobReadStream(blob).pipe(stream);
+          }
+        });
+        this.recordAudio.startRecording();
+      }, err => {
+        console.log(err);
+      });
+    },
+    stopRecording() {
+      this.recordAudio.stopRecording(() => {
+        this.recordAudio.getDataURL(audioDataURL => {
+          this.socket.emit('stream', {
+            type: this.recordAudio.getBlob().type || 'audio/wav',
+            data: audioDataURL
+          });
+        });
+      });
+    },
+    hotwordDetection() {
+      this.recording ? this.stopRecording() : this.startRecording();
+      this.recording = !this.recording;
+    },
+    getImgUrl(pic) {
+      return require('@/assets/'+pic)
     }
   }
 }
