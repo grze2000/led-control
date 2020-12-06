@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <section class="start" @click="connect()" v-if="!gatt || !gatt.connected">
+    <section class="start" @click="connect()" v-if="!gatt">
       <img height="40" src="@/assets/images/Bluetooth.svg" class="bt-logo"/>
       Kliknij aby rozpocząć
     </section>
@@ -34,16 +34,15 @@
               </optgroup>
             </select>
           </li>
-          <li><div class="actual-color"></div></li>
-          <li id="halloween-mode"><img src="@/assets/images/pumpkin.svg" alt="H" height="24"></li>
-          <li id="thanos-snap"><img src="@/assets/images/infinity-guantlet.svg" alt="I" height="24"></li>
+          <li @click="halloweenMode()"><img src="@/assets/images/pumpkin.svg" alt="H" height="24"></li>
+          <li @click="thanosSnap()"><img src="@/assets/images/infinity-guantlet.svg" alt="I" height="24"></li>
           <li id="hotword-recognition"><img src="@/assets/images/microphone.svg" alt="I" height="24"></li>
-          <li id="light-switch"><i class="fa fa-power-off"></i></li>
-          <li id="disconnect" @click="disconnect()"><i class="fa fa-sign-out"></i></li>
+          <li @click="powerBtn()"><i class="fa fa-power-off"></i></li>
+          <li @click="disconnect()"><i class="fa fa-sign-out"></i></li>
         </ul>
       </nav>
     </main>
-    <div class="snackbar"></div>
+    <div :class="['snackbar', {'snackbar-show': snackbar.show}]">{{ snackbar.message }}</div>
   </div>
 </template>
 
@@ -65,7 +64,11 @@ export default {
       colorWheel: null,
       gatt: null,
       charstc: null,
-      snackbarTimeout: null,
+      snackbar: {
+        timeoutID: null,
+        show: false,
+        message: ''
+      },
       sendStatus: false,
       powerStatus: false,
       //socket: io.connect(window.config.hotwordDetectionServer),
@@ -116,7 +119,34 @@ export default {
     disconnect() {
       if(this.gatt) {
         this.gatt.disconnect();
+        this.gatt = null;
       }
+    },
+    showSnackbar(msg) {
+      if(this.snackbar.timeoutID) {
+        clearTimeout(this.snackbar.timeoutID);
+      }
+      this.snackbar.message = msg;
+      this.snackbar.show = true;
+      this.snackbar.timeoutID = setTimeout(() => {
+        this.snackbar.show = false;
+      }, 3000);
+    },
+    powerBtn() {
+      this.send(parseInt(this.section), 1);
+    },
+    send(section, command) {
+      if(!this.gatt || !this.charstc) {
+        return this.showSnackbar('Nie połączono z urządzeniem');
+      }
+      this.charstc.writeValue(Uint8Array.of(section | (command << 4)));
+    },
+    halloweenMode() {
+      this.send(parseInt(this.section), 3);
+    },
+    thanosSnap() {
+      console.log('I am inevitable');
+      this.send(parseInt(this.section), 4);
     }
   }
 }
@@ -234,12 +264,5 @@ nav {
 .snackbar-show {
   opacity: 1;
   visibility: visible;
-}
-.actual-color {
-  width: 22px;
-  height: 22px;
-  background-color: red;
-  border-radius: 50%;
-  border: 1px solid #404040;
 }
 </style>
