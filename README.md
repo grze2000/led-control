@@ -20,10 +20,12 @@ It uses the [SoftwareSerial](https://www.arduino.cc/en/Reference/softwareSerial)
 
 ## Led control web app
 
- It uses [Bluetooth Web API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API) to communicate with controller
+It uses [Bluetooth Web API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API) to communicate with controller
+
+![](http://grzegorzbabiarz.com/img/ledControl.jpg)
  
- ![](http://grzegorzbabiarz.com/img/ledControl.jpg)
- 
- ## Features
- - Turn on/off, change color of selected part of led strip
- - Halloween mode
+## Features
+- Turn on/off, change color of selected part of led strip
+- Halloween mode
+- Thanos mode
+- Voice control: fingersnap detection
