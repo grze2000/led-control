@@ -208,9 +208,9 @@ void setup() {
   strap.begin();
   strap.show();
   for(int i=0; i<sizeof(sections)/sizeof(sections[0]); i++) {
-    sections[i][3] = defaultColor[3];
-    sections[i][4] = defaultColor[4];
-    sections[i][5] = defaultColor[5];
+    sections[i][3] = defaultColor[0];
+    sections[i][4] = defaultColor[1];
+    sections[i][5] = defaultColor[2];
   }
 }
 
