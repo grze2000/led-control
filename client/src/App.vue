@@ -4,44 +4,16 @@
       <img height="40" src="@/assets/images/Bluetooth.svg" class="bt-logo"/>
       Kliknij aby rozpocząć
     </section>
-    <main>
-      <section class="content">
-        <div class="color-picker" ref="colorPicker"></div>
-      </section>
-      <nav>
-        <ul class="menu">
-          <li>
-            <select id="section" v-model="section">
-              <optgroup label="Podstawowe">
-                <option value="0">Wszystko</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-              </optgroup>
-              <optgroup label="Dodatkowe">
-                <option value="10">Przód</option>
-                <option value="11">Tył</option>
-                <option value="12">Biurko</option>
-                <option value="13">Łóżko</option>
-                <option value="14">Przód + drzwi</option>
-                <option value="15">Tył + środek</option>
-              </optgroup>
-            </select>
-          </li>
-          <li @click="halloweenMode()"><img src="@/assets/images/pumpkin.svg" alt="H" height="24"></li>
-          <li @click="thanosSnap()"><img src="@/assets/images/infinity-guantlet.svg" alt="I" height="24"></li>
-          <li @click="hotwordDetection()"><img :src="getImgUrl(this.recording ? 'images/microphone-on.svg' : 'images/microphone.svg')" alt="I" height="24"></li>
-          <li @click="powerBtn()"><i class="fa fa-power-off"></i></li>
-          <li @click="disconnect()"><i class="fa fa-sign-out"></i></li>
-        </ul>
-      </nav>
+    <main class="content">
+      <component :is="screen"></component>
     </main>
+    <nav>
+      <ul class="actions">
+        <li @click="hotwordDetection()"><img :src="getImgUrl(this.recording ? 'images/microphone-on.svg' : 'images/microphone.svg')" alt="I" height="24"></li>
+        <li @click="powerBtn()"><i class="fa fa-power-off"></i></li>
+        <li @click="disconnect()"><i class="fa fa-sign-out"></i></li>
+      </ul>
+    </nav>
     <div :class="['snackbar', {'snackbar-show': snackbar.show}]">{{ snackbar.message }}</div>
   </div>
 </template>
@@ -53,10 +25,16 @@ import io from 'socket.io-client';
 import ss from 'socket.io-stream';
 import RecordRTC from 'recordrtc';
 
+import SectionSelect from './components/SectionSelect.vue';
+import ColorSelect from './components/ColorSelect.vue';
+import Menu from './components/Menu.vue';
+
 export default {
   name: 'App',
+  components: {SectionSelect, ColorSelect, Menu},
   data() {
     return {
+      component: 'Menu',
       config: {
         device: {
           name: 'BT05M',
@@ -77,6 +55,7 @@ export default {
       recordAudio: null,
       recording: false,
       section: null,
+      screen: 'Menu',
     }
   },
   mounted() {
@@ -238,7 +217,7 @@ body {
   background-color: forestgreen;
 }
 .start {
-  display: flex;
+  display: none;
   width: 100%;
   height: 100%;
   flex-direction: column;
