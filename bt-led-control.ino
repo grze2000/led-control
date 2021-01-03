@@ -16,23 +16,23 @@ Adafruit_NeoPixel strap = Adafruit_NeoPixel(LED_COUNT, A0, NEO_GRB + NEO_KHZ800)
 // ---------------------------------------
 
 int defaultColor[3] = {255, 78, 0};
-int sections[16][6] = { // {firstPixel, lastPixel, status, R, G, B}
-  {0, 402, 0, 0, 0, 0},
-  {0, 42, 0, 0, 0, 0},
-  {43, 83, 0, 0, 0, 0},
-  {84, 124, 0, 0, 0, 0},
-  {125, 159, 0, 0, 0, 0},
-  {160, 245, 0, 0, 0, 0},
-  {246, 280, 0, 0, 0, 0},
-  {281, 321, 0, 0, 0, 0},
-  {322, 362, 0, 0, 0, 0},
-  {363, 402, 0, 0, 0, 0},
-  {125, 280, 0, 0, 0, 0},
-  {322, 83, 0, 0, 0, 0},
-  {203, 280, 0, 0, 0, 0},
-  {110, 202, 0, 0, 0, 0},
-  {84, 280, 0, 0, 0, 0},
-  {281, 124, 0, 0, 0, 0}
+int sections[16][6] = { // {firstPixel, pixelCount, status, R, G, B}
+  {0, 403, 0, 0, 0, 0},
+  {0, 43, 0, 0, 0, 0},
+  {43, 41, 0, 0, 0, 0},
+  {84, 41, 0, 0, 0, 0},
+  {125, 35, 0, 0, 0, 0},
+  {160, 86, 0, 0, 0, 0},
+  {246, 35, 0, 0, 0, 0},
+  {281, 41, 0, 0, 0, 0},
+  {322, 41, 0, 0, 0, 0},
+  {363, 40, 0, 0, 0, 0},
+  {125, 156, 0, 0, 0, 0},
+  {322, 165, 0, 0, 0, 0},
+  {203, 78, 0, 0, 0, 0},
+  {110, 93, 0, 0, 0, 0},
+  {84, 197, 0, 0, 0, 0},
+  {281, 247, 0, 0, 0, 0}
 };
 
 // ---------------------------------------
@@ -65,17 +65,17 @@ int disintegrationStatus[2] = {0, 0}; // {pixelsToDisintegration, pixelCount}
 // ---------------------------------------
 
 int randLedFromSection(int section) {
-  if(sections[section][0] > sections[section][1]) {
-    int rangeEnd = LED_COUNT + sections[section][1];
-    int randomLed = random(sections[section][0], rangeEnd);
-    return randomLed >= LED_COUNT ? randomLed-LED_COUNT : randomLed;
-  } else {
-    return random(sections[section][0], sections[section][1]+1);
-  }
+  return (random(sections[section][0], sections[section][0] + sections[section][1]) % LED_COUNT);
 }
 
 bool isActive(int i) {
   return strap.getPixelColor(i) != strap.Color(0, 0, 0);
+}
+
+void fill(uint32_t color, int first, int count) {
+  for(int i=first; i<first+count; i++) {
+    strap.setPixelColor(i % LED_COUNT, color);
+  }
 }
 
 // ---------------------------------------
@@ -98,20 +98,13 @@ void thanosMode(int section) {
   animation[0] = section;
   animation[1] = 2;
   disintegrationStatus[1] = 0;
-  if(sections[section][0] > sections[section][1]) {
-    for(int i=sections[section][0]; i<LED_COUNT; i++) {
-      if(isActive(i)) disintegrationStatus[1]++;
-    }
-    for(int i=0; i<=sections[section][1]; i++) {
-      if(isActive(i)) disintegrationStatus[1]++;
-    }
-  } else {
-    for(int i=sections[section][0]; i<=sections[section][1]; i++) {
-      if(isActive(i)) disintegrationStatus[1]++;
-    }
+  for(int i=sections[section][0]; i<sections[section][0]+sections[section][1]; i++) {
+    if(isActive(i % LED_COUNT)) disintegrationStatus[1]++;
   }
   if(disintegrationStatus[1] == 1) {
-    //to change: clear section with fill method
+    fill(strap.Color(0, 0, 0), sections[section][0], sections[section][1]);
+    strap.show();
+    sections[section][2] = 0;
     disintegrationStatus[0] = 1;
     return;
   }
@@ -150,17 +143,8 @@ void halloweenMode(int section) {
   if(sections[section][2] == 0) {
     sections[section][2] = 1;
   }
-  if(sections[section][0] > sections[section][1]) {
-    for(int i=sections[section][0]; i<LED_COUNT; i++) {
-      setHalloweenColor(i);
-    }
-    for(int i=0; i<=sections[section][1]; i++) {
-      setHalloweenColor(i);
-    }
-  } else {
-    for(int i=sections[section][0]; i<=sections[section][1]; i++) {
-      setHalloweenColor(i);
-    }
+  for(int i=sections[section][0]; i<sections[section][0]+sections[section][1]; i++) {
+    setHalloweenColor(i % LED_COUNT);
   }
   strap.show();
 }
@@ -224,12 +208,7 @@ void loop() {
         Serial.println("Power");
       }
       if(sections[section][2] == 0) {
-        if(sections[section][1] > sections[section][0]) {
-          strap.fill(strap.Color(sections[section][3], sections[section][4], sections[section][5]), sections[section][0], sections[section][1]-sections[section][0]+1);
-        } else {
-          strap.fill(strap.Color(sections[section][3], sections[section][4], sections[section][5]), sections[section][0], LED_COUNT-sections[section][0]);
-          strap.fill(strap.Color(sections[section][3], sections[section][4], sections[section][5]), 0, sections[section][1]+1);
-        }
+        fill(strap.Color(sections[section][3], sections[section][4], sections[section][5]), sections[section][0], sections[section][1]);
         if(section == 0) {
           for(int i=0; i<sizeof(sections)/sizeof(sections[0]); i++) {
             sections[i][2] = 1;
@@ -247,12 +226,7 @@ void loop() {
         if(animation[0] == section) {
           animation[0] = -1;
         }
-        if(sections[section][1] > sections[section][0]) {
-          strap.fill(strap.Color(0, 0, 0), sections[section][0], sections[section][1]-sections[section][0]+1);
-        } else {
-          strap.fill(strap.Color(0, 0, 0), sections[section][0], LED_COUNT-sections[section][0]);
-          strap.fill(strap.Color(0, 0, 0), 0, sections[section][1]+1);
-        }
+        fill(strap.Color(0, 0, 0), sections[section][0], sections[section][1]);
         sections[section][2] = 0;
       }
       strap.show();
@@ -263,12 +237,7 @@ void loop() {
         if(animation[0] == section) {
           animation[0] = -1;
         }
-        if(sections[section][1] > sections[section][0]) {
-          strap.fill(strap.Color(color[0], color[1], color[2]), sections[section][0], sections[section][1]-sections[section][0]+1);
-        } else {
-          strap.fill(strap.Color(color[0], color[1], color[2]), sections[section][0], LED_COUNT-sections[section][0]);
-          strap.fill(strap.Color(color[0], color[1], color[2]), 0, sections[section][1]+1);
-        }
+        fill(strap.Color(color[0], color[1], color[2]), sections[section][0], sections[section][1]);
         strap.show();
       }
       for(int i=0; i<3; i++) {
