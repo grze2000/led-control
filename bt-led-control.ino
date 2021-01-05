@@ -1,6 +1,7 @@
 #include <QList.h>
 #include <SoftwareSerial.h>
 #include <Adafruit_NeoPixel.h>
+#include <EEPROM.h>
 #define LED_COUNT 403
 #define DEBUG false
 
@@ -79,6 +80,59 @@ void fill(uint32_t color, int first, int count) {
 }
 
 // ---------------------------------------
+// |            READ EEPROM              |
+// ---------------------------------------
+
+void readState() {
+  for(int i=0; i<2; i++) {
+    byte state = EEPROM.read(i);
+    if(state == 0) {
+      continue;
+    }
+    for(int j=0; j<8; j++) {
+      sections[i*8+j][2] = bitRead(state, 7-j);
+    }
+  }
+}
+
+void readColor() {
+  for(int i=0; i<16; i++) {
+    sections[i][3] = EEPROM.read(i*3+2) ? EEPROM.read(i*3+2) : defaultColor[0];
+    sections[i][4] = EEPROM.read(i*3+3) ? EEPROM.read(i*3+3) : defaultColor[1];
+    sections[i][5] = EEPROM.read(i*3+4) ? EEPROM.read(i*3+4) : defaultColor[2];
+  }
+}
+
+void readEEPROM() {
+  readState();
+  readColor();
+}
+
+void saveState() {
+  for(int i=0; i<2; i++) {
+    byte state = 0;
+    for(int j=0; j<8; j++) {
+      bitWrite(state, 7-j, (bool) sections[i*8+j][2]);
+    }
+    byte value = EEPROM.read(i);
+    if(value != state) {
+      EEPROM.write(i, state);
+    }
+  }
+}
+
+void saveColor() {
+  for(int i=0; i<16; i++) {
+    for(int j=0; j<3; j++) {
+      byte color = EEPROM.read(i*3+j+2);
+      if(color != sections[i][3+j]) {
+        EEPROM.write(i*3+j+2, sections[i][3+j]);
+      }
+    }
+  }
+}
+
+// ---------------------------------------
 // |          HALLOWEEN MODE             |
 // ---------------------------------------
 
@@ -105,6 +159,7 @@ void thanosMode(int section) {
     fill(strap.Color(0, 0, 0), sections[section][0], sections[section][1]);
     strap.show();
     sections[section][2] = 0;
+    saveState();
     disintegrationStatus[0] = 1;
     return;
   }
@@ -142,6 +197,7 @@ void halloweenMode(int section) {
   animation[1] = 1;
   if(sections[section][2] == 0) {
     sections[section][2] = 1;
+    saveState();
   }
   for(int i=sections[section][0]; i<sections[section][0]+sections[section][1]; i++) {
     setHalloweenColor(i % LED_COUNT);
@@ -190,12 +246,16 @@ void setup() {
     Serial.println("Serial started");
   }
   strap.begin();
-  strap.show();
+  readEEPROM();
   for(int i=0; i<sizeof(sections)/sizeof(sections[0]); i++) {
-    sections[i][3] = defaultColor[0];
-    sections[i][4] = defaultColor[1];
-    sections[i][5] = defaultColor[2];
+    if(sections[i][2] == 1) {
+      fill(strap.Color(sections[i][3], sections[i][4], sections[i][5]), sections[i][0], sections[i][1]);
+      if(i == 0) {
+        break;
+      }
+    }
   }
+  strap.show();
 }
 
 void loop() {
@@ -229,6 +289,7 @@ void loop() {
         fill(strap.Color(0, 0, 0), sections[section][0], sections[section][1]);
         sections[section][2] = 0;
       }
+      saveState();
       strap.show();
     } else if(cmd == 2) {
       byte color[3];
@@ -243,6 +304,7 @@ void loop() {
       for(int i=0; i<3; i++) {
         sections[section][i+3] = color[i];
       }
+      saveColor();
     } else if(cmd == 3 && (section == 0 || section > 9)) {
       halloweenMode(section);
     } else if(cmd == 4) {
