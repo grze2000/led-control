@@ -10,9 +10,9 @@ WS2812B led strip controller built on a Atmega328p microcontroller
 - 2x 10kΩ resistor
 - 16 MHz crystal
 
-### Circuit diagram
+### Breadboard schematic
 
-TO DO
+![](https://grzegorzbabiarz.com/img/led_controller_bb.png)
 
 ## Arduino code
 
